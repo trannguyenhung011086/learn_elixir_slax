@@ -1,21 +1,31 @@
 defmodule SlaxWeb.ChatRoomLive do
   use SlaxWeb, :live_view
 
-  def mount(_params, _session, socket) do
-    {:ok, socket}
-  end
+  alias Slax.Chat.Room
+  alias Slax.Repo
 
   @spec render(any()) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <div class="flex items-center justify-center min-h-screen bg-gray-100">
-        <div class="text-center">
-          <h1 class="text-4xl font-bold text-gray-800 mb-4">Welcome to Slax Chat!</h1>
-          <p class="text-gray-600">A real-time chat application built with Phoenix LiveView</p>
+      <div class="flex flex-col grow shadow-lg">
+        <div class="flex justify-between items-center shrink-0 h-16 bg-white border-b border-slate-300 px-4">
+          <div class="flex flex-col gap-1.5">
+            <h1 class="text-sm font-bold leading-none">
+              #{@room.name}
+            </h1>
+            <div class="text-xs leading-none h-3.5">
+              {@room.topic}
+            </div>
+          </div>
         </div>
       </div>
     </Layouts.app>
     """
+  end
+
+  def mount(_params, _session, socket) do
+    room = Room |> Repo.all() |> List.first()
+    {:ok, assign(socket, :room, room)}
   end
 end
