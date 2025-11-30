@@ -8,7 +8,7 @@ defmodule SlaxWeb.ChatRoomLive do
   @spec render(any()) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={nil}>
+    <Layouts.app flash={@flash}>
       <div class="flex items-center justify-center min-h-screen bg-gray-100">
         <div class="text-center">
           <h1 class="text-4xl font-bold text-gray-800 mb-4">Welcome to Slax Chat!</h1>
