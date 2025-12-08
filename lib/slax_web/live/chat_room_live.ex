@@ -84,7 +84,7 @@ defmodule SlaxWeb.ChatRoomLive do
       :error -> List.first(socket.assigns.rooms)
     end
 
-    {:noreply, assign(socket, room: room, hide_topic?: false)}
+    {:noreply, assign(socket, hide_topic?: false, page_title: "#" <> room.name, room: room)}
   end
 
 end
