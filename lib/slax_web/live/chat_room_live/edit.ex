@@ -61,7 +61,7 @@ defmodule SlaxWeb.ChatRoomLive.Edit do
     end
   end
 
-  def handle_event("validate-event", %{"room" => room_params}, socket) do
+  def handle_event("validate-room", %{"room" => room_params}, socket) do
     changeset =
       socket.assigns.room
       |> Chat.change_room(room_params)
