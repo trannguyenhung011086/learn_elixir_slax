@@ -2,6 +2,7 @@ defmodule SlaxWeb.ChatRoomLive do
   use SlaxWeb, :live_view
 
   alias Slax.Chat.Room
+  alias Slax.Chat.Message
   alias Slax.Chat
 
   @spec render(any()) :: Phoenix.LiveView.Rendered.t()
@@ -59,6 +60,9 @@ defmodule SlaxWeb.ChatRoomLive do
             </.link>
           </li>
         </ul>
+        <div class="flex flex-col grow overflow-auto">
+          <.message :for={message <- @messages} message={message} />
+        </div>
       </div>
     </Layouts.app>
     """
@@ -66,6 +70,23 @@ defmodule SlaxWeb.ChatRoomLive do
 
   attr :active, :boolean, required: true
   attr :room, Room, required: true
+  attr :message, Message, required: true
+
+  defp message(assigns) do
+    ~H"""
+    <div class="relative flex px-4 py-3">
+      <div class="h-10 w-10 rounded shrink-0 bg-slate-300"></div>
+      <div class="ml-2">
+        <div class="-mt-1">
+          <.link class="text-sm font-semibold hover:underline">
+            <span>User</span>
+          </.link>
+          <p class="text-sm">{@message.body}</p>
+        </div>
+      </div>
+    </div>
+    """
+  end
 
   defp room_link(assigns) do
     ~H"""
@@ -95,12 +116,20 @@ defmodule SlaxWeb.ChatRoomLive do
   end
 
   def handle_params(params, uri, socket) do
-    room = case Map.fetch(params, "id") do
-      {:ok, id} -> Chat.get_room!(id)
-      :error -> List.first(socket.assigns.rooms)
-    end
+    room =
+      case Map.fetch(params, "id") do
+        {:ok, id} -> Chat.get_room!(id)
+        :error -> List.first(socket.assigns.rooms)
+      end
 
-    {:noreply, assign(socket, hide_topic?: false, page_title: "#" <> room.name, room: room)}
+    messages = Chat.list_messages_in_room(room)
+
+    {:noreply,
+     assign(socket,
+       hide_topic?: false,
+       messages: messages,
+       page_title: "#" <> room.name,
+       room: room
+     )}
   end
-
 end
