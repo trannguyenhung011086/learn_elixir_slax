@@ -1,9 +1,9 @@
 defmodule SlaxWeb.ChatRoomLive do
   use SlaxWeb, :live_view
 
-  alias Slax.Chat.Room
-  alias Slax.Chat.Message
   alias Slax.Chat
+  alias Slax.Chat.Message
+  alias Slax.Chat.Room
   alias Slax.Repo
 
   @spec render(any()) :: Phoenix.LiveView.Rendered.t()
