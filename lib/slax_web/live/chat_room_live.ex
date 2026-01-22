@@ -61,41 +61,42 @@ defmodule SlaxWeb.ChatRoomLive do
             </.link>
           </li>
         </ul>
-        <div class="flex flex-col grow overflow-auto">
-          <.message :for={message <- @messages} message={message} />
+        <div id="room-messages" class="flex flex-col grow overflow-auto" phx-update="stream">
+          <.message :for={{dom_id, message} <- @streams.messages} dom_id={dom_id} message={message} />
         </div>
         <div class="bg-white px-4">
-        <.form
-          id="new-message-form"
-          for={@new_message_form}
-          phx-change="validate-message"
-          phx-submit="submit-message"
-          class="flex items-center border-2 border-slate-300 rounded-t-sm p-1 border-b-0"
-        >
-          <textarea
-            class="grow text-sm px-3 border-l border-slate-300 mx-1 resize-none"
-            cols=""
-            id="chat-message-textarea"
-            name={@new_message_form[:body].name}
-            placeholder={"Message ##{@room.name}"}
-            phx-debounce
-            rows="1"
-          >{Phoenix.HTML.Form.normalize_value("textarea", @new_message_form[:body].value)}</textarea>
-          <button class="shrink flex items-center justify-center h-6 w-6 rounded hover:bg-slate-200">
-            <.icon name="hero-paper-airplane" class="h-4 w-4" />
-          </button>
-        </.form>
-      </div>
+          <.form
+            id="new-message-form"
+            for={@new_message_form}
+            phx-change="validate-message"
+            phx-submit="submit-message"
+            class="flex items-center border-2 border-slate-300 rounded-t-sm p-1 border-b-0"
+          >
+            <textarea
+              class="grow text-sm px-3 border-l border-slate-300 mx-1 resize-none"
+              cols=""
+              id="chat-message-textarea"
+              name={@new_message_form[:body].name}
+              placeholder={"Message ##{@room.name}"}
+              phx-debounce
+              rows="1"
+            >{Phoenix.HTML.Form.normalize_value("textarea", @new_message_form[:body].value)}</textarea>
+            <button class="shrink flex items-center justify-center h-6 w-6 rounded hover:bg-slate-200">
+              <.icon name="hero-paper-airplane" class="h-4 w-4" />
+            </button>
+          </.form>
+        </div>
       </div>
     </Layouts.app>
     """
   end
 
+  attr :dom_id, :string, required: true
   attr :message, Message, required: true
 
   defp message(assigns) do
     ~H"""
-    <div class="relative flex px-4 py-3">
+    <div id={@dom_id} class="relative flex px-4 py-3">
       <div class="h-10 w-10 rounded shrink-0 bg-slate-300"></div>
       <div class="ml-2">
         <div class="-mt-1">
@@ -157,9 +158,11 @@ defmodule SlaxWeb.ChatRoomLive do
       case Chat.create_message(room, message_params, current_scope) do
         {:ok, message} ->
           socket
-          |> update(:messages, &(&1 ++ [Repo.preload(message, :user)]))
+          |> stream_insert(:messages, Repo.preload(message, :user))
           |> assign_message_form(Chat.change_message(%Message{}, %{}, current_scope))
-        {:error, changeset} -> assign_message_form(socket, changeset)
+
+        {:error, changeset} ->
+          assign_message_form(socket, changeset)
       end
 
     {:noreply, socket}
@@ -176,12 +179,8 @@ defmodule SlaxWeb.ChatRoomLive do
 
     {:noreply,
      socket
-     |> assign(
-       hide_topic?: false,
-       messages: messages,
-       page_title: "#" <> room.name,
-       room: room
-     )
+     |> assign(room: room, hide_topic?: false, page_title: "#" <> room.name)
+     |> stream(:messages, messages, reset: true)
      |> assign_message_form(Chat.change_message(%Message{}, %{}, socket.assigns.current_scope))}
   end
 
