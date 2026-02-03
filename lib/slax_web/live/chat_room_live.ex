@@ -4,7 +4,6 @@ defmodule SlaxWeb.ChatRoomLive do
   alias Slax.Chat
   alias Slax.Chat.Message
   alias Slax.Chat.Room
-  alias Slax.Repo
 
   @spec render(any()) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
@@ -61,7 +60,12 @@ defmodule SlaxWeb.ChatRoomLive do
             </.link>
           </li>
         </ul>
-        <div id="room-messages" class="flex flex-col grow overflow-auto bg-white" phx-update="stream">
+        <div
+          id="room-messages"
+          class="flex flex-col grow overflow-auto"
+          phx-hook="RoomMessages"
+          phx-update="stream"
+        >
           <.message
             :for={{dom_id, message} <- @streams.messages}
             current_user={@current_scope.user}
@@ -85,6 +89,7 @@ defmodule SlaxWeb.ChatRoomLive do
               name={@new_message_form[:body].name}
               placeholder={"Message ##{@room.name}"}
               phx-debounce
+              phx-hook="ChatMessageTextarea"
               rows="1"
             >{Phoenix.HTML.Form.normalize_value("textarea", @new_message_form[:body].value)}</textarea>
             <button class="shrink flex items-center justify-center h-6 w-6 rounded hover:bg-slate-200">
@@ -198,7 +203,12 @@ defmodule SlaxWeb.ChatRoomLive do
   end
 
   def handle_info({:new_message, message}, socket) do
-    {:noreply, stream_insert(socket, :messages, message)}
+    socket =
+      socket
+      |> stream_insert(:messages, message)
+      |> push_event("scroll_messages_to_bottom", %{})
+
+    {:noreply, socket}
   end
 
   def handle_info({:message_deleted, message}, socket) do
@@ -222,7 +232,8 @@ defmodule SlaxWeb.ChatRoomLive do
      socket
      |> assign(room: room, hide_topic?: false, page_title: "#" <> room.name)
      |> stream(:messages, messages, reset: true)
-     |> assign_message_form(Chat.change_message(%Message{}, %{}, socket.assigns.current_scope))}
+     |> assign_message_form(Chat.change_message(%Message{}, %{}, socket.assigns.current_scope))
+     |> push_event("scroll_messages_to_bottom", %{})}
   end
 
   defp assign_message_form(socket, changeset) do

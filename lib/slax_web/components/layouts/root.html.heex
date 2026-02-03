@@ -22,7 +22,8 @@
           }
         };
         if (!document.documentElement.hasAttribute("data-theme")) {
-          setTheme(localStorage.getItem("phx:theme") || "system");
+          // Default to light theme for a bright UI unless user previously selected a theme
+          setTheme(localStorage.getItem("phx:theme") || "light");
         }
         window.addEventListener("storage", (e) => e.key === "phx:theme" && setTheme(e.newValue || "system"));
         
